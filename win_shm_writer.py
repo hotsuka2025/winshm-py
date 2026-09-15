@@ -46,7 +46,7 @@ class WinShmWriter:
         self._shmat.restype = ctypes.c_void_p
 
         self._shmdt = self._libc.shmdt
-        self._shmdt.argtypes = [ctypes.c_void_p]
+        self._shmdt.argtypes = [ctypes.c_int]
         self._shmdt.restype = ctypes.c_int
 
         self._addr: Optional[int] = None
@@ -100,13 +100,6 @@ class WinShmWriter:
             raise RuntimeError("invalid shm segment size")
 
         phys_len = seg_size - header_size
-        logical_ratio = (
-            self.shm_config.logical_fill_ratio
-            if 0.1 <= self.shm_config.logical_fill_ratio <= 1.0
-            else DEFAULT_LOGICAL_FILL_RATIO
-        )
-        #logical_len = int(phys_len * logical_ratio)
-        #ring_capacity_max = logical_len - 1
         ring_capacity_max = phys_len
 
         if ring_capacity_max < 0:
@@ -120,21 +113,18 @@ class WinShmWriter:
             hdr.write_pointer, hdr.read_pointer, hdr.sequence_counter, hdr.ring_capacity = 0, 0, 0, ring_capacity_max
             return
 
-        #if hdr.ring_capacity < 0 or hdr.ring_capacity > ring_capacity_max:
         hdr.ring_capacity = ring_capacity_max
 
         if self.shm_config.repair_header:
             if (
                 hdr.write_pointer < 0
                 or hdr.write_pointer > hdr.ring_capacity
-                or hdr.read_pointer < 0
-                or hdr.read_pointer > hdr.ring_capacity
             ):
                 sys.stderr.write(
                     f"[win_shm_writer] WARNING: shm header invalid "
-                    f"(write_pointer={hdr.write_pointer}, read_pointer={hdr.read_pointer}); resetting.\n"
+                    f"(write_pointer={hdr.write_pointer}); resetting write_pointer.\n"
                 )
-                hdr.write_pointer, hdr.read_pointer, hdr.sequence_counter = 0, 0, 0
+                hdr.write_pointer, hdr.sequence_counter = 0, 0
 
             if self.shm_config.init_on_start:
                 ctypes.memset(self._ring_base, 0, phys_len)
@@ -163,15 +153,12 @@ class WinShmWriter:
         if (
             hdr.write_pointer < 0
             or hdr.write_pointer > ring_cap
-            or hdr.read_pointer < 0
-            or hdr.read_pointer > ring_cap
         ):
             if self.shm_config.repair_header:
-                hdr.write_pointer, hdr.read_pointer = 0, 0
+                hdr.write_pointer = 0
             else:
                 raise RuntimeError(
-                    f"invalid shm pointers write_pointer={hdr.write_pointer}, "
-                    f"read_pointer={hdr.read_pointer}, ring_capacity={ring_cap}"
+                    f"invalid shm pointer write_pointer={hdr.write_pointer}, ring_capacity={ring_cap}"
                 )
 
         # 1. リングバッファ末尾に入り切らない場合の処理
@@ -192,7 +179,6 @@ class WinShmWriter:
 
         # シーケンスカウンター更新
         hdr.sequence_counter = (hdr.sequence_counter + 1) & UINT64_MASK
-
 
     def close(self) -> None:
         if self._addr:
