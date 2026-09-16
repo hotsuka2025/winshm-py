@@ -100,9 +100,10 @@ class WinShmWriter:
             raise RuntimeError("invalid shm segment size")
 
         phys_len = seg_size - header_size
-        ring_capacity_max = phys_len
+        fill_ratio = max(0.1, min(1.0, float(self.shm_config.logical_fill_ratio)))
+        ring_capacity_max = int(phys_len * fill_ratio)
 
-        if ring_capacity_max < 0:
+        if ring_capacity_max <= 0:
             raise RuntimeError("invalid shm ring capacity")
 
         self._payload_max = phys_len
@@ -118,7 +119,7 @@ class WinShmWriter:
         if self.shm_config.repair_header:
             if (
                 hdr.write_pointer < 0
-                or hdr.write_pointer > hdr.ring_capacity
+                or hdr.write_pointer > self._payload_max
             ):
                 sys.stderr.write(
                     f"[win_shm_writer] WARNING: shm header invalid "
@@ -150,34 +151,26 @@ class WinShmWriter:
         hdr = self._shm_header_p[0]
         ring_cap = hdr.ring_capacity
 
-        if (
-            hdr.write_pointer < 0
-            or hdr.write_pointer > ring_cap
-        ):
+        if hdr.write_pointer < 0 or hdr.write_pointer > self._payload_max:
             if self.shm_config.repair_header:
                 hdr.write_pointer = 0
             else:
                 raise RuntimeError(
-                    f"invalid shm pointer write_pointer={hdr.write_pointer}, ring_capacity={ring_cap}"
+                    f"invalid shm pointer write_pointer={hdr.write_pointer}"
                 )
 
-        # 1. リングバッファ末尾に入り切らない場合の処理
-        if hdr.write_pointer + block_len > ring_cap:
-            rem_bytes = ring_cap - hdr.write_pointer
-            if rem_bytes > 0:
-                ctypes.memset(self._ring_base + hdr.write_pointer, 0, rem_bytes)
-            start = 0
-        else:
-            start = hdr.write_pointer
+        # 1. 物理領域サイズを超過する場合の安全保護リセット
+        if hdr.write_pointer + block_len > self._payload_max:
+            hdr.write_pointer = 0
 
-        # 2. 共有メモリへ書き込み
-        ctypes.memmove(self._ring_base + start, block, block_len)
+        # 2. 現在位置への一括連続書き込み (wintowin.c と同様の処理)
+        ctypes.memmove(self._ring_base + hdr.write_pointer, block, block_len)
 
-        # 3. 書き込み後のポインタ更新（end_pos > ring_cap の場合のみ 0 に折返す）
-        end_pos = start + block_len
-        hdr.write_pointer = 0 if end_pos > ring_cap else end_pos
+        # 3. 書き込み後ポインタ算定と pl (ring_capacity) による折返し判定
+        next_p = hdr.write_pointer + block_len
+        hdr.write_pointer = 0 if next_p > ring_cap else next_p
 
-        # シーケンスカウンター更新
+        # 4. シーケンスカウンター更新
         hdr.sequence_counter = (hdr.sequence_counter + 1) & UINT64_MASK
 
     def close(self) -> None:
