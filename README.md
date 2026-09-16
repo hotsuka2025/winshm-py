@@ -60,4 +60,4 @@ This project is licensed under the **GNU General Public License v2.0 (GPL-2.0)**
 
 - Urabe, T., & Tsukada, S., 1992. win --- A Workstation Program for Processing Waveform Data from Microearthquake Networks, Seismological Society of Japan Fall Meeting Abstracts, P-41.
 - Urabe, T., 1994. A Common Format for Multi-Channel Earthquake Waveform Data, Seismological Society of Japan Abstracts, No. 2, P-24.
-- ERI WIN-System Manual: [https://wwweic.eri.u-tokyo.ac.jp/WIN/man.ja/](https://wwweic.eri.u-tokyo.ac.jp/WIN/man.ja/)
+- ERI WIN-System Manual: [https://wwweic.eri.u-tokyo.ac.jp/WIN/man.en/](https://wwweic.eri.u-tokyo.ac.jp/WIN/man.en/)
