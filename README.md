@@ -71,6 +71,69 @@ writer = WinShmWriter(shm_id=1)
 writer.write_packet(raw_packet_bytes)
 ```
 
+### Command-line examples
+
+#### `pyshmin` — WIN text format to shared memory
+
+`pyshmin` reads the **WIN text format** from standard input, converts it into WIN blocks, and writes the blocks to shared memory.
+
+For example, a WIN text format data stream can be piped directly into `pyshmin`:
+
+```bash
+cat waveform.txt | python pyshmin.py --shm-key 15
+```
+
+The WIN text format consists of time information followed by sample data for each channel.
+
+```text
+2026 09 28 12 00 00 2
+0101 100 0.123 0.125 0.121 ...
+0102 100 0.456 0.452 0.459 ...
+```
+
+When creating a new shared memory segment, its size can be specified:
+
+```bash
+cat waveform.txt | python pyshmin.py --shm-key 15 --shm-size 1048576
+```
+
+#### `pyshmout` — Read WIN data from shared memory
+
+`pyshmout` reads WIN data from shared memory and provides several command-line output modes.
+
+For example, a specific channel can be selected:
+
+```bash
+python pyshmout.py --shm-key 15 -c 0101
+```
+
+The WIN data can also be output as text:
+
+```bash
+python pyshmout.py --shm-key 15 -c 0101 -t
+```
+
+The `--peek` option can be used to inspect the current contents of the shared memory:
+
+```bash
+python pyshmout.py --shm-key 15 --peek
+```
+
+The `--plot` option provides a real-time terminal display of up to three channels:
+
+```bash
+python pyshmout.py --shm-key 15 --plot -c 0101
+```
+
+Multiple channels can be displayed simultaneously:
+
+```bash
+python pyshmout.py --shm-key 15 --plot -c 0101 0102 0103
+```
+
+In `--plot` mode, the display also provides simple statistics such as `last`, `mean`, `rms`, and `p2p`. This can be useful for checking whether waveform data is being continuously written to and read from the shared memory in real time.
+
+
 ## Experimental Utilities
 
 ### MQTT: Shared Memory to Shared Memory
