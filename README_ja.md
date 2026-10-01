@@ -2,7 +2,7 @@
 
 # winshm-py
 
-**winshm-py** は、東京大学地震研究所（ERI）が開発した WIN-System (卜部・束田 1992)と互換性のある、Linux共有メモリ（IPC）用の Python ネイティブな読み書きライブラリです。
+**winshm-py** は、東京大学地震研究所（ERI）が開発した [WINシステム](https://wwweic.eri.u-tokyo.ac.jp/WIN/Jindex.html) (卜部・束田 1992)と互換性のある、Linux共有メモリ（IPC）用の Python ネイティブな読み書きライブラリです。
 
 C言語の外部バイナリやサブプロセスを呼び出すことなく、Pythonから直接共有メモリセグメント上の WIN 形式波形データの読み出しおよび書き込みが行えます。
 
@@ -19,7 +19,7 @@ WINシステムは、日本の地震観測網において長年標準的に利�
 - **Pure Python 実装**: C言語バイナリ依存やラッパースクリプトなしで Linux 共有メモリ (IPC) と直接通信。
 - **双方向の共有メモリ I/O**: 共有メモリからの読み込み (`win_shm_reader.py` / `pyshmin.py`) および書き込み (`win_shm_writer.py` / `pyshmout.py`) の両方に対応。
 - **低遅延 IPC 処理**: リアルタイム波形ストリーミングや AI 検測モデルの評価環境などで利用可能。
-- **本家 WIN との互換性**: 東京大学地震研究所（ERI）開発のWIN システム(卜部・束田 1992)の共有メモリ構造およびパケット形式に対応。
+- **本家 WIN との互換性**: WINシステムの共有メモリ構造およびパケット形式に対応。
 - **実験用 MQTT 通信**: `win_shm_mqtt_pub.py` / `win_shm_mqtt_sub.py` により、MQTT ブローカーを介して共有メモリ間でWINブロックを転送できます。
 - **実験用ファイル保存**: `win_shm_recorder.py` により、共有メモリ上のWINブロックを分単位のWINファイルとして保存できます。
 
@@ -104,7 +104,7 @@ cat waveform.txt | python pyshmin.py --shm-key 15 --shm-size 1048576
 例えば、特定のチャンネルだけを表示できます。
 
 ```bash
-python pyshmout.py --shm-key 15 -c 0101
+python pyshmout.py --shm-key 15 -c 0101,0102,0103
 ```
 
 WIN データをテキスト形式で出力することもできます。
@@ -122,16 +122,14 @@ python pyshmout.py --shm-key 15 --peek
 また、`--plot` オプションを使用すると、最大3チャンネルの波形をターミナル上にリアルタイム表示できます。
 
 ```bash
-python pyshmout.py --shm-key 15 --plot -c 0101
+python pyshmout.py --shm-key 15 --plot 0101,0102,0103
 ```
 
-複数チャンネルを同時に表示することもできます。
+`--plot` モードでは、波形表示に使うデシメーション方法を `last`、`mean`、`rms`、`p2p` から選べます。共有メモリへのデータ入力が正常に行われているかを、ターミナル上でリアルタイムに確認する用途に利用できます。
 
 ```bash
-python pyshmout.py --shm-key 15 --plot -c 0101 0102 0103
+python pyshmout.py --shm-key 15 --plot 0101 --plot-metric rms
 ```
-
-`--plot` モードでは、波形に加えて `last`、`mean`、`rms`、`p2p` などの簡単な統計値も表示されます。共有メモリへのデータ入力が正常に行われているかを、ターミナル上でリアルタイムに確認する用途に利用できます。
 
 
 ## 実験用ユーティリティ
@@ -206,6 +204,7 @@ python win_shm_recorder.py \
 
 ## 参考文献・リンク
 
+- ERI WINシステムHP: [https://wwweic.eri.u-tokyo.ac.jp/WIN/Jindex.html](https://wwweic.eri.u-tokyo.ac.jp/WIN/Jindex.html)
+- ERI WINシステム マニュアル: [https://wwweic.eri.u-tokyo.ac.jp/WIN/man.ja/](https://wwweic.eri.u-tokyo.ac.jp/WIN/man.ja/)
 - 卜部卓・束田進也, 1992. win─微小地震観測網波形験測支援のためのワークステーション・プログラム（強化版）, 日本地震学会講演予稿集1992年度秋季大会，P 41.
 - 卜部 卓，1994，多チャンネル地震波形データのための共通フォーマットの提案 , 日本地震学会講演予稿集 , No. 2, P24.
-- ERI WINシステム マニュアル: [https://wwweic.eri.u-tokyo.ac.jp/WIN/man.ja/](https://wwweic.eri.u-tokyo.ac.jp/WIN/man.ja/)

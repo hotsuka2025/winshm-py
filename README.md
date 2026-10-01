@@ -19,7 +19,7 @@ For experimental purposes, the repository also includes utilities for sending WI
 - **Pure Python Implementation**: Interacts directly with Linux shared memory (IPC) without C dependencies or wrapper scripts.
 - **Bi-directional Shared Memory I/O**: Supports both reading (`win_shm_reader.py` / `pyshmin.py`) and writing (`win_shm_writer.py` / `pyshmout.py`) WIN format data packets.
 - **Low-Latency IPC**: Can be used for real-time waveform streaming and evaluation environments for AI phase-picking models.
-- **Compatibility with the Original WIN-System**: Supports the shared memory structures and packet format of the WIN-System developed by the Earthquake Research Institute, The University of Tokyo (Urabe & Tsukada, 1992).
+- **Compatibility with the Original WIN-System**: Supports the shared memory structures and packet format of the original WIN-System.
 - **Experimental MQTT Transport**: `win_shm_mqtt_pub.py` / `win_shm_mqtt_sub.py` can transfer WIN blocks between shared-memory segments via an MQTT broker.
 - **Experimental File Recording**: `win_shm_recorder.py` can record WIN blocks from shared memory into minute-based WIN files.
 
@@ -101,10 +101,10 @@ cat waveform.txt | python pyshmin.py --shm-key 15 --shm-size 1048576
 
 `pyshmout` reads WIN data from shared memory and provides several command-line output modes.
 
-For example, a specific channel can be selected:
+For example, a specific channels can be selected:
 
 ```bash
-python pyshmout.py --shm-key 15 -c 0101
+python pyshmout.py --shm-key 15 -c 0101,0102,0103
 ```
 
 The WIN data can also be output as text:
@@ -122,16 +122,14 @@ python pyshmout.py --shm-key 15 --peek
 The `--plot` option provides a real-time terminal display of up to three channels:
 
 ```bash
-python pyshmout.py --shm-key 15 --plot -c 0101
+python pyshmout.py --shm-key 15 --plot 0101,0102,0103
 ```
 
-Multiple channels can be displayed simultaneously:
+In --plot mode, you can select the decimation method used for waveform display from last, mean, rms, and p2p. This can be used to check in real time from the terminal whether waveform data is being properly written to shared memory.
 
 ```bash
-python pyshmout.py --shm-key 15 --plot -c 0101 0102 0103
+python pyshmout.py --shm-key 15 --plot 0101 --plot-metric rms
 ```
-
-In `--plot` mode, the display also provides simple statistics such as `last`, `mean`, `rms`, and `p2p`. This can be useful for checking whether waveform data is being continuously written to and read from the shared memory in real time.
 
 
 ## Experimental Utilities
@@ -206,6 +204,7 @@ This project is licensed under the **GNU General Public License v2.0 (GPL-2.0)**
 
 ## References
 
+- ERI WIN-System HP: [https://wwweic.eri.u-tokyo.ac.jp/WIN/Jindex.html](https://wwweic.eri.u-tokyo.ac.jp/WIN/Jindex.html)
+- ERI WIN-System Manual: [https://wwweic.eri.u-tokyo.ac.jp/WIN/man.en/](https://wwweic.eri.u-tokyo.ac.jp/WIN/man.en/)
 - Urabe, T., & Tsukada, S., 1992. win --- A Workstation Program for Processing Waveform Data from Microearthquake Networks, Seismological Society of Japan Fall Meeting Abstracts, P-41.
 - Urabe, T., 1994. A Common Format for Multi-Channel Earthquake Waveform Data, Seismological Society of Japan Abstracts, No. 2, P-24.
-- ERI WIN-System Manual: [https://wwweic.eri.u-tokyo.ac.jp/WIN/man.en/](https://wwweic.eri.u-tokyo.ac.jp/WIN/man.en/)
