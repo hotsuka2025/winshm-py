@@ -69,9 +69,9 @@ def parse_stream(stream: Iterable[str]) -> Iterator[PacketData]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Text -> WIN -> shared memory writer")
     parser.add_argument("shm_key", help="System V shm key (e.g., 11 or 0x000B)")
-    parser.add_argument("--create", type=int, default=0, help="Create shm segment if missing, with SIZE bytes.")
+    parser.add_argument("--shm-size", type=int, default=0, help="Create shm segment if missing, with SIZE KB (1000 bytes/KB).")
     parser.add_argument("--no-overwrite", action="store_true", help="Compatibility flag.")
-    parser.add_argument("--no-eob-size", action="store_true", help="Do not append end-of-block size trailer.")
+    parser.add_argument("--eob-size", action="store_true", help="Append end-of-block size trailer.")
     parser.add_argument("--init", action="store_true", help="Initialize shm header pointers on start.")
     parser.add_argument("--no-repair-header", action="store_true", help="Disable header pointer sanity repairs.")
     parser.add_argument(
@@ -88,9 +88,9 @@ def main() -> int:
 
     shm_config = ShmConfig(
         key=int(args.shm_key, 0),
-        create_size=args.create,
+        create_size=args.shm_size * 1000,
         overwrite=(not args.no_overwrite),
-        add_eob_size=(not args.no_eob_size),
+        add_eob_size=args.eob_size,
         init_on_start=args.init,
         repair_header=(not args.no_repair_header),
     )

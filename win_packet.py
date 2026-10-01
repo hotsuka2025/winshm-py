@@ -150,7 +150,7 @@ def encode_channel_block(channel_id: int, sample_rate: int, samples: List[int], 
 def build_block(
     timestamp: datetime,
     channels: List[ChannelDataTuple],
-    add_eob_size: bool = True,
+    add_eob_size: bool = False,
     ss_mode: str = "auto",
     with_tow: bool = False,
     time_offset: int = 0,
