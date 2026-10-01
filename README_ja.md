@@ -2,38 +2,56 @@
 
 # winshm-py
 
-**winshm-py** は、東京大学地震研究所（ERI）が開発した WIN-System と互換性のある、Linux共有メモリ（IPC）用の Pure Python 読み書きライブラリです。
+**winshm-py** は、東京大学地震研究所（ERI）が開発した WIN-System (卜部・束田 1992)と互換性のある、Linux共有メモリ（IPC）用の Python ネイティブな読み書きライブラリです。
 
-C言語の外部バイナリやサブプロセスを呼び出すことなく、Pythonから直接共有メモリセグメント上の WIN 形式波形データの読み出しおよび書き込み（注入）が行えます。
+C言語の外部バイナリやサブプロセスを呼び出すことなく、Pythonから直接共有メモリセグメント上の WIN 形式波形データの読み出しおよび書き込みが行えます。
 
 ## 概要
 
-WINシステムは、日本の地震観測網において長年標準的に利用されてきた多チャネル地震波形データ処理システムです。従来、共有メモリへのアクセスはC言語製ツール群が中心でしたが、`winshm-py` は Python ネイティブな実装を提供することで、超低遅延なIPCストリーム処理を実現します。
+WINシステムは、日本の地震観測網において長年標準的に利用されてきた多チャネル地震波形データ処理システムです。従来、共有メモリへのアクセスはC言語製ツール群が中心でしたが、`winshm-py` は Python ネイティブな実装を提供することで、低遅延なIPCストリーム処理を実現します。
 
-これにより、リアルタイムな WIN データストリームと現代の Python 向け AI/機械学習パイプライン（PyTorch, TensorFlow, PhaseNet, ObsPy など）とのシームレスな直接連携やテストベンチ構築が可能になります。
+本プロジェクトの主目的は、**PythonからWIN共有メモリへアクセスすること**です。共有メモリの読み書き機能がライブラリの中心的な機能です。
+
+また実験用の補助機能として、WINブロックを MQTT 経由で送受信するツールと、共有メモリ上のWINブロックをファイルへ保存するツールを用意しています。これらはライブラリの本体ではなく、コア機能を使ったデータ通信や保存経路を試すための**実験用ユーティリティ**という位置づけです。MQTT通信機について、本家WIN-System の raw2mq/mq2raw との互換性は考慮していません。
 
 ## 主な特徴
 
 - **Pure Python 実装**: C言語バイナリ依存やラッパースクリプトなしで Linux 共有メモリ (IPC) と直接通信。
 - **双方向の共有メモリ I/O**: 共有メモリからの読み込み (`win_shm_reader.py` / `pyshmin.py`) および書き込み (`win_shm_writer.py` / `pyshmout.py`) の両方に対応。
-- **低遅延 IPC 処理**: リアルタイム波形ストリーミングや AI 検測モデルの評価環境に最適なメモリ直接アクセス。
-- **Stock WIN との互換性**: 東京大学地震研究所（ERI）開発の標準 WIN システムの共有メモリ構造およびパケット形式に準拠。
+- **低遅延 IPC 処理**: リアルタイム波形ストリーミングや AI 検測モデルの評価環境などで利用可能。
+- **本家 WIN との互換性**: 東京大学地震研究所（ERI）開発のWIN システム(卜部・束田 1992)の共有メモリ構造およびパケット形式に対応。
+- **実験用 MQTT 通信**: `win_shm_mqtt_pub.py` / `win_shm_mqtt_sub.py` により、MQTT ブローカーを介して共有メモリ間でWINブロックを転送できます。
+- **実験用ファイル保存**: `win_shm_recorder.py` により、共有メモリ上のWINブロックを分単位のWINファイルとして保存できます。
 
 ## リポジトリ構成
+
+### 共有メモリのコア機能
 
 - `win_shm_reader.py` / `pyshmin.py`: 共有メモリセグメントから WIN パケットを取得するリーダーコンポーネント。
 - `win_shm_writer.py` / `pyshmout.py`: 共有メモリセグメントへ WIN パケットを注入するライターコンポーネント。
 - `win_shm_common.py`: 共有メモリ構造体の定義および IPC 共通ユーティリティ。
 - `win_packet.py`: WIN パケット構造の解析・パッキング関数。
 
+### 実験用ユーティリティ
+
+- `win_shm_mqtt_pub.py`: 共有メモリからWINブロックを読み出し、MQTTトピックへ送信します。
+- `win_shm_mqtt_sub.py`: MQTTトピックを購読し、受信したWINブロックを共有メモリへ書き込みます。
+- `win_shm_recorder.py`: 共有メモリからWINブロックを読み出し、分単位のWINファイルとして保存します。
+- `win_file.py`: レコーダーが使用するWINファイル書き込みユーティリティ。
+
+MQTT通信とファイル保存のユーティリティは、共有メモリのコア実装とは分離しています。主に実験、動作確認、データ経路の例示を目的としています。
+
 ## 動作環境
 
 - **OS**: Linux / Ubuntu (System V 共有メモリ IPC 環境が必要)
-- **Python**: 3.10 以上 (Python 3.12 推奨)
+- **Python**: 3.10 以上 (Python 3.12 でテスト)
+- **MQTT ユーティリティ**: MQTT機能を使用する場合は `paho-mqtt` が必要。
+- **MQTT ブローカー**: MQTT実験には Mosquitto などの MQTT ブローカーが必要。
 
 ## 基本的な使い方
 
 ### 共有メモリからの読み込み
+
 ```python
 from win_shm_reader import WinShmReader
 
@@ -44,6 +62,7 @@ for packet in reader.read_packets():
 ```
 
 ### 共有メモリへの書き込み
+
 ```python
 from win_shm_writer import WinShmWriter
 
@@ -51,6 +70,72 @@ from win_shm_writer import WinShmWriter
 writer = WinShmWriter(shm_id=1)
 writer.write_packet(raw_packet_bytes)
 ```
+
+## 実験用ユーティリティ
+
+### MQTT：共有メモリ間のデータ転送
+
+MQTTユーティリティでは、WINブロックを共有メモリから取り出し、MQTTを経由して別の共有メモリへ転送する実験的な経路を構成できます。
+
+```
+[WINデータ供給元]
+      |
+      v
+System-V共有メモリ
+      |
+      v
+win_shm_mqtt_pub.py
+      |
+      | MQTT
+      v
+MQTTブローカー
+      |
+      v
+win_shm_mqtt_sub.py
+      |
+      v
+System-V共有メモリ
+      |
+      v
+[WINデータ利用側]
+```
+
+Publisher の例:
+
+```bash
+python win_shm_mqtt_pub.py \
+    --shm-key 15 \
+    --broker 192.168.1.100 \
+    --port 1883 \
+    --topic win/15/raw
+```
+
+Subscriber の例:
+
+```bash
+python win_shm_mqtt_sub.py \
+    --shm-key 16 \
+    --shm-size 1024 \
+    --broker 192.168.1.100 \
+    --port 1883 \
+    --topic win/15/raw
+```
+
+Publisher は生のWINブロックをMQTT payloadとして送信し、Subscriber は受信したpayloadを転送先のWIN共有メモリへ直接書き込みます。
+
+### ファイル保存
+
+`win_shm_recorder.py` は、共有メモリ上のWINブロックを分単位のWINファイルへ保存するための、実験用の簡単なレコーダーです。
+
+```bash
+python win_shm_recorder.py \
+    --shm-key 15 \
+    --output-dir ./win-data
+```
+
+デフォルトでは短いポーリング間隔で共有メモリを監視し、読み出しが遅れてリングバッファ上の現在位置から取り残された場合には、現在の書き込み位置までスキップします。この動作を変更したい場合は `--no-drop-if-behind` を指定します。
+
+これらのユーティリティは、WIN共有メモリを中心とした通信経路・保存経路の実験や動作確認を目的としています。共有メモリの読み書きという本来の機能を置き換えるものではありません。
 
 ## ライセンス
 
