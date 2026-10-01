@@ -10,7 +10,8 @@ It enables direct reading and writing of WIN-format time-series seismic data to/
 
 The WIN-System is a multi-channel seismic waveform processing system that has long been widely used in seismic observation networks in Japan. While traditional tools have centered on C-based utilities for shared memory access, `winshm-py` provides a native Python implementation for low-latency IPC stream processing.
 
-The primary purpose of this project is to provide **Python-based access to WIN shared memory**. The shared-memory reader and writer are the core functionality of the library.
+The primary purpose of this project is to provide **Python-based access to WIN shared memory**. The shared-memory reader and writer are the core functionality of the library. This project does not aim to replace the entire WIN system with Python. Instead, it is intended to improve compatibility with real-time processing using Python and to lower the barrier to using the WIN system for learning and educational purposes.
+
 
 For experimental purposes, the repository also includes utilities for sending WIN blocks over MQTT and recording WIN blocks to files. These are not part of the core library, but are provided as **experimental utilities** for testing data transport and storage paths using the core functionality. The MQTT utilities do not aim to be compatible with `raw2mq` / `mq2raw` of the original WIN-System.
 
@@ -111,12 +112,6 @@ The WIN data can also be output as text:
 
 ```bash
 python pyshmout.py --shm-key 15 -c 0101 -t
-```
-
-The `--peek` option can be used to inspect the current contents of the shared memory:
-
-```bash
-python pyshmout.py --shm-key 15 --peek
 ```
 
 The `--plot` option provides a real-time terminal display of up to three channels:

@@ -7,7 +7,6 @@ WIN shared-memory dumper aligned with object-oriented WinShmReader (Vectorized v
 - Default : debug print
 - -c      : channel filter (16-hex codes, e.g., -c 0101 0102)
 - -t      : text mode
-- -p      : peek mode
 - --plot  : btm-like sparkline display (1-3 channels)
 """
 
@@ -330,7 +329,7 @@ def main():
         help="Target channel codes in HEX (e.g., -c 0101 0102 or -c 0101,0102)",
     )
     ap.add_argument("-t", action="store_true", help="Output in text mode")
-    ap.add_argument("-p", "--peek", action="store_true", help="Peek mode (do not update read pointer)")
+    #ap.add_argument("-p", "--peek", action="store_true", help="Peek mode (do not update read pointer)")
     ap.add_argument("--sleep", type=float, default=0.1, help="Sleep interval in seconds")
     ap.add_argument("--plot", help="Plot mode for target channels (e.g., --plot 0101,0102)")
     ap.add_argument(
@@ -344,13 +343,13 @@ def main():
     key = int(args.key, 0)
 
     if args.plot:
-        run_plot(key, args.plot, args.peek, args.sleep, args.plot_metric)
+        run_plot(key, args.plot, True, args.sleep, args.plot_metric)
         return 0
 
     target_channels = parse_channel_args(args.channels)
 
     try:
-        with WinShmReader(key=key, peek=args.peek, sleep=args.sleep, target_channels=target_channels) as r:
+        with WinShmReader(key=key, peek=True, sleep=args.sleep, target_channels=target_channels) as r:
             for block in r.iter_blocks():
                 ts = block.timestamp
                 if args.t:
