@@ -2,7 +2,7 @@ English | [日本語](README_ja.md)
 
 # winshm-py
 
-**winshm-py** is a Python-native reader/writer library for Linux shared memory (IPC) compatible with the WIN-System (Urabe & Tsukada, 1992) developed by the Earthquake Research Institute, The University of Tokyo (ERI).
+**winshm-py** is a Python-native reader/writer library for Linux shared memory (IPC) compatible with the [WIN-System](https://wwweic.eri.u-tokyo.ac.jp/WIN/Eindex.html) (Urabe & Tsukada, 1992) developed by the Earthquake Research Institute, The University of Tokyo (ERI).
 
 It enables direct reading and writing of WIN-format time-series seismic data to/from shared memory segments without relying on external C binaries or sub-processes.
 
